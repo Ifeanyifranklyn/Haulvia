@@ -14,7 +14,7 @@ export default function HomeScreen() {
       <StatusBar style="dark" />
 
       <View style={styles.content}>
-        <Text style={styles.brand}>LoadLink</Text>
+        <Text style={styles.brand}>Haulvia</Text>
 
         <Text style={styles.heading}>
           Move small loads with less friction.
