@@ -1,15 +1,15 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 
 const LOAD_CATEGORIES = [
@@ -142,10 +142,12 @@ export default function LoadDetailsScreen() {
 
     console.log(loadDetails);
 
-    /*
-     * Step 3 navigation will replace the console.log above after we create:
-     * app/post-load/schedule.tsx
-     */
+    router.push({
+  pathname: '/post-load/schedule',
+  params: {
+    loadDetails: JSON.stringify(loadDetails),
+  },
+});
   };
 
   return (
