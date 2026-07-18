@@ -1,16 +1,16 @@
 import DateTimePicker, {
-    DateTimePickerEvent,
+  DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 
 const PICKUP_WINDOWS = [
@@ -300,12 +300,12 @@ export default function ScheduleScreen() {
       },
     };
 
-    console.log(scheduleDetails);
-
-    /*
-     * Step 4 navigation will replace this console.log after we create:
-     * app/post-load/pricing.tsx
-     */
+    router.push({
+  pathname: '/post-load/pricing',
+  params: {
+    scheduleDetails: JSON.stringify(scheduleDetails),
+  },
+});
   };
 
   return (
