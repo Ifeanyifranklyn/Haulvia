@@ -1,6 +1,9 @@
+import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import {
+  Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,6 +14,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
+
+const MAX_PHOTOS = 10;
 
 const LOAD_CATEGORIES = [
   'Furniture',
@@ -37,6 +42,15 @@ type VehicleRequirement = (typeof VEHICLE_REQUIREMENTS)[number];
 type WeightUnit = 'lb' | 'kg';
 type DimensionUnit = 'in' | 'cm';
 
+type LoadPhoto = {
+  id: string;
+  uri: string;
+  width: number | null;
+  height: number | null;
+  fileName: string | null;
+  mimeType: string | null;
+};
+
 function isOptionalPositiveNumber(value: string) {
   if (value.trim() === '') {
     return true;
@@ -45,6 +59,22 @@ function isOptionalPositiveNumber(value: string) {
   const numericValue = Number(value);
 
   return Number.isFinite(numericValue) && numericValue > 0;
+}
+
+function createPhoto(
+  asset: ImagePicker.ImagePickerAsset,
+  index: number,
+): LoadPhoto {
+  return {
+    id:
+      asset.assetId ??
+      `${Date.now()}-${index}-${asset.uri}`,
+    uri: asset.uri,
+    width: asset.width ?? null,
+    height: asset.height ?? null,
+    fileName: asset.fileName ?? null,
+    mimeType: asset.mimeType ?? null,
+  };
 }
 
 export default function LoadDetailsScreen() {
@@ -56,6 +86,7 @@ export default function LoadDetailsScreen() {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<LoadCategory | null>(null);
   const [quantity, setQuantity] = useState('1');
+  const [photos, setPhotos] = useState<LoadPhoto[]>([]);
 
   const [weight, setWeight] = useState('');
   const [weightUnit, setWeightUnit] = useState<WeightUnit>('lb');
@@ -113,6 +144,135 @@ export default function LoadDetailsScreen() {
     dimensionsAreValid &&
     vehicleRequirementIsValid;
 
+  const addPhotos = (newPhotos: LoadPhoto[]) => {
+    setPhotos((currentPhotos) => {
+      const existingUris = new Set(
+        currentPhotos.map((photo) => photo.uri),
+      );
+
+      const uniquePhotos = newPhotos.filter(
+        (photo) => !existingUris.has(photo.uri),
+      );
+
+      return [...currentPhotos, ...uniquePhotos].slice(
+        0,
+        MAX_PHOTOS,
+      );
+    });
+  };
+
+  const chooseFromGallery = async () => {
+    const remainingPhotoCount = MAX_PHOTOS - photos.length;
+
+    if (remainingPhotoCount <= 0) {
+      Alert.alert(
+        'Photo limit reached',
+        `You can add up to ${MAX_PHOTOS} photos.`,
+      );
+      return;
+    }
+
+    const permission =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert(
+        'Photo access required',
+        'Allow Haulvia to access your photo library so you can attach load photos.',
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      selectionLimit: remainingPhotoCount,
+      quality: 0.8,
+    });
+
+    if (result.canceled || result.assets.length === 0) {
+      return;
+    }
+
+    addPhotos(
+      result.assets.map((asset, index) =>
+        createPhoto(asset, index),
+      ),
+    );
+  };
+
+  const takePhoto = async () => {
+    if (photos.length >= MAX_PHOTOS) {
+      Alert.alert(
+        'Photo limit reached',
+        `You can add up to ${MAX_PHOTOS} photos.`,
+      );
+      return;
+    }
+
+    const permission =
+      await ImagePicker.requestCameraPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert(
+        'Camera access required',
+        'Allow Haulvia to use your camera so you can photograph the load.',
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: false,
+      quality: 0.8,
+    });
+
+    if (result.canceled || result.assets.length === 0) {
+      return;
+    }
+
+    addPhotos([createPhoto(result.assets[0], 0)]);
+  };
+
+  const openPhotoOptions = () => {
+    if (photos.length >= MAX_PHOTOS) {
+      Alert.alert(
+        'Photo limit reached',
+        `Remove a photo before adding another one.`,
+      );
+      return;
+    }
+
+    Alert.alert(
+      photos.length === 0 ? 'Add photos' : 'Add more photos',
+      'Choose where the photos should come from.',
+      [
+        {
+          text: 'Take Photo',
+          onPress: () => {
+            void takePhoto();
+          },
+        },
+        {
+          text: 'Choose from Gallery',
+          onPress: () => {
+            void chooseFromGallery();
+          },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ],
+    );
+  };
+
+  const removePhoto = (photoID: string) => {
+    setPhotos((currentPhotos) =>
+      currentPhotos.filter((photo) => photo.id !== photoID),
+    );
+  };
+
   const handleContinue = () => {
     setShowErrors(true);
 
@@ -126,6 +286,7 @@ export default function LoadDetailsScreen() {
       description: description.trim(),
       category,
       quantity: quantityNumber,
+      photos,
       weight: weight.trim() ? Number(weight) : null,
       weightUnit,
       dimensions: hasAllDimensions
@@ -143,11 +304,11 @@ export default function LoadDetailsScreen() {
     console.log(loadDetails);
 
     router.push({
-  pathname: '/post-load/schedule',
-  params: {
-    loadDetails: JSON.stringify(loadDetails),
-  },
-});
+      pathname: '/post-load/schedule',
+      params: {
+        loadDetails: JSON.stringify(loadDetails),
+      },
+    });
   };
 
   return (
@@ -220,7 +381,7 @@ export default function LoadDetailsScreen() {
 
           <View style={styles.form}>
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Describe the load</Text>
+              <Text style={styles.label}>What are you moving?</Text>
 
               <TextInput
                 multiline
@@ -306,6 +467,97 @@ export default function LoadDetailsScreen() {
                   Enter a valid whole-number quantity.
                 </Text>
               ) : null}
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <View style={styles.photoHeaderRow}>
+                <Text style={styles.label}>
+                  Photos
+                  <Text style={styles.optionalLabel}> Optional</Text>
+                </Text>
+
+                <Text style={styles.photoCount}>
+                  {photos.length}/{MAX_PHOTOS}
+                </Text>
+              </View>
+
+              <Text style={styles.fieldDescription}>
+                Help drivers understand the load and provide more accurate
+                offers.
+              </Text>
+
+              {photos.length > 0 ? (
+                <View style={styles.photoGrid}>
+                  {photos.map((photo, index) => (
+                    <View key={photo.id} style={styles.photoItem}>
+                      <Image
+                        accessibilityLabel={`Load photo ${index + 1}`}
+                        source={{ uri: photo.uri }}
+                        style={styles.photoPreview}
+                      />
+
+                      <Pressable
+                        accessibilityLabel={`Remove load photo ${index + 1}`}
+                        accessibilityRole="button"
+                        hitSlop={8}
+                        onPress={() => removePhoto(photo.id)}
+                        style={({ pressed }) => [
+                          styles.removePhotoButton,
+                          pressed && styles.pressed,
+                        ]}
+                      >
+                        <Text style={styles.removePhotoText}>
+                          {'\u00D7'}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.emptyPhotoCard}>
+                  <View style={styles.cameraIconContainer}>
+                    <Text style={styles.cameraIcon}>
+                      {'\u25A3'}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.emptyPhotoTitle}>
+                    Help drivers understand what they are moving
+                  </Text>
+
+                  <Text style={styles.emptyPhotoText}>
+                    Add clear photos of the complete load, its condition, and
+                    anything that may affect loading or unloading.
+                  </Text>
+                </View>
+              )}
+
+              {photos.length < MAX_PHOTOS ? (
+                <Pressable
+                  accessibilityLabel={
+                    photos.length === 0
+                      ? 'Add load photos'
+                      : 'Add more load photos'
+                  }
+                  accessibilityRole="button"
+                  onPress={openPhotoOptions}
+                  style={({ pressed }) => [
+                    styles.addPhotoButton,
+                    pressed && styles.addPhotoButtonPressed,
+                  ]}
+                >
+                  <Text style={styles.addPhotoIcon}>+</Text>
+                  <Text style={styles.addPhotoButtonText}>
+                    {photos.length === 0
+                      ? 'Add Photos'
+                      : 'Add More Photos'}
+                  </Text>
+                </Pressable>
+              ) : (
+                <Text style={styles.photoLimitText}>
+                  Maximum of {MAX_PHOTOS} photos reached.
+                </Text>
+              )}
             </View>
 
             <View style={styles.fieldGroup}>
@@ -670,6 +922,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  photoHeaderRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
   label: {
     color: '#111827',
     fontSize: 15,
@@ -754,6 +1011,120 @@ const styles = StyleSheet.create({
   },
   optionChipTextSelected: {
     color: '#1D4ED8',
+  },
+  photoCount: {
+    color: '#6B7280',
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 9,
+  },
+  emptyPhotoCard: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#DCE1E9',
+    borderRadius: 18,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    paddingHorizontal: 22,
+    paddingVertical: 24,
+  },
+  cameraIconContainer: {
+    alignItems: 'center',
+    backgroundColor: '#E8EEFF',
+    borderRadius: 999,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
+  cameraIcon: {
+    color: '#1D4ED8',
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  emptyPhotoTitle: {
+    color: '#111827',
+    fontSize: 15,
+    fontWeight: '800',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  emptyPhotoText: {
+    color: '#6B7280',
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  photoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  photoItem: {
+    aspectRatio: 1,
+    borderRadius: 14,
+    overflow: 'visible',
+    position: 'relative',
+    width: '30.5%',
+  },
+  photoPreview: {
+    backgroundColor: '#E5E7EB',
+    borderRadius: 14,
+    height: '100%',
+    width: '100%',
+  },
+  removePhotoButton: {
+    alignItems: 'center',
+    backgroundColor: '#111827',
+    borderColor: '#FFFFFF',
+    borderRadius: 999,
+    borderWidth: 2,
+    height: 28,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: -7,
+    top: -7,
+    width: 28,
+  },
+  removePhotoText: {
+    color: '#FFFFFF',
+    fontSize: 19,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  addPhotoButton: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#1D4ED8',
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 14,
+    minHeight: 54,
+    paddingHorizontal: 18,
+  },
+  addPhotoButtonPressed: {
+    backgroundColor: '#E8EEFF',
+  },
+  addPhotoIcon: {
+    color: '#1D4ED8',
+    fontSize: 23,
+    fontWeight: '500',
+    marginRight: 8,
+    marginTop: -2,
+  },
+  addPhotoButtonText: {
+    color: '#1D4ED8',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  photoLimitText: {
+    color: '#6B7280',
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 12,
+    textAlign: 'center',
   },
   measurementRow: {
     flexDirection: 'row',

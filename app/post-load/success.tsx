@@ -1,41 +1,47 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useMemo } from 'react';
 import {
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    View,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 
 type ServiceType = 'expedited' | 'flex';
+
+const TEMPORARY_LOAD_NUMBER = 'HV-20260722-0001';
+
+function firstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
 
 export default function LoadSuccessScreen() {
   const params = useLocalSearchParams<{
     serviceType?: ServiceType;
     price?: string;
+    pickupLocation?: string;
+    deliveryLocation?: string;
+    description?: string;
+    category?: string;
+    quantity?: string;
+    vehicleRequirement?: string;
+    pickupDate?: string;
+    deliveryDate?: string;
   }>();
 
   const serviceType = useMemo<ServiceType>(() => {
-    const rawValue = Array.isArray(params.serviceType)
-      ? params.serviceType[0]
-      : params.serviceType;
-
-    return rawValue === 'flex' ? 'flex' : 'expedited';
+    return firstParam(params.serviceType) === 'flex'
+      ? 'flex'
+      : 'expedited';
   }, [params.serviceType]);
 
   const selectedPrice = useMemo(() => {
-    const rawValue = Array.isArray(params.price)
-      ? params.price[0]
-      : params.price;
+    const parsedValue = Number(firstParam(params.price));
 
-    const parsedValue = Number(rawValue);
-
-    return Number.isFinite(parsedValue)
-      ? parsedValue
-      : null;
+    return Number.isFinite(parsedValue) ? parsedValue : null;
   }, [params.price]);
 
   const isExpedited = serviceType === 'expedited';
@@ -50,15 +56,29 @@ export default function LoadSuccessScreen() {
       : null;
 
   const handleViewLoad = () => {
-    /*
-     * Temporary destination.
-     *
-     * Later this will navigate to the newly created load using
-     * its real database ID:
-     *
-     * router.replace(`/loads/${loadId}`);
-     */
-    router.replace('/');
+    router.replace({
+      pathname: '/loads/[loadId]',
+      params: {
+        loadId: TEMPORARY_LOAD_NUMBER,
+        serviceType,
+        price:
+          selectedPrice !== null
+            ? String(selectedPrice)
+            : undefined,
+        pickupLocation:
+          firstParam(params.pickupLocation) ?? undefined,
+        deliveryLocation:
+          firstParam(params.deliveryLocation) ?? undefined,
+        description: firstParam(params.description) ?? undefined,
+        category: firstParam(params.category) ?? undefined,
+        quantity: firstParam(params.quantity) ?? undefined,
+        vehicleRequirement:
+          firstParam(params.vehicleRequirement) ?? undefined,
+        pickupDate: firstParam(params.pickupDate) ?? undefined,
+        deliveryDate:
+          firstParam(params.deliveryDate) ?? undefined,
+      },
+    });
   };
 
   const handlePostAnotherLoad = () => {
@@ -91,9 +111,10 @@ export default function LoadSuccessScreen() {
           </View>
 
           <Text style={styles.eyebrow}>LOAD POSTED</Text>
+          <Text style={styles.title}>Your load is live</Text>
 
-          <Text style={styles.title}>
-            Your load is live
+          <Text style={styles.referenceNumber}>
+            {TEMPORARY_LOAD_NUMBER}
           </Text>
 
           <Text style={styles.subtitle}>
@@ -114,7 +135,7 @@ export default function LoadSuccessScreen() {
               <View style={styles.serviceIdentity}>
                 <View style={styles.serviceIconContainer}>
                   <Text style={styles.serviceIcon}>
-                    {isExpedited ? '🚀' : '🤝'}
+                    {isExpedited ? '⚡' : '↔'}
                   </Text>
                 </View>
 
@@ -152,7 +173,7 @@ export default function LoadSuccessScreen() {
 
             {formattedPrice ? (
               <View style={styles.priceRow}>
-                <View>
+                <View style={styles.priceTextContainer}>
                   <Text style={styles.priceLabel}>
                     {isExpedited
                       ? 'Estimated fixed price'
@@ -180,7 +201,9 @@ export default function LoadSuccessScreen() {
 
             <View style={styles.timelineItem}>
               <View style={styles.timelineLeft}>
-                <View style={styles.activeTimelineDot} />
+                <View style={styles.activeTimelineDot}>
+                  <Text style={styles.completedCheck}>✓</Text>
+                </View>
                 <View style={styles.timelineLine} />
               </View>
 
@@ -190,16 +213,15 @@ export default function LoadSuccessScreen() {
                 </Text>
 
                 <Text style={styles.timelineDescription}>
-                  Your load details have been submitted to
-                  Haulvia.
+                  Your load details have been submitted to Haulvia.
                 </Text>
               </View>
             </View>
 
             <View style={styles.timelineItem}>
               <View style={styles.timelineLeft}>
-                <View style={styles.pendingTimelineDot}>
-                  <Text style={styles.timelineNumber}>2</Text>
+                <View style={styles.currentTimelineDot}>
+                  <View style={styles.currentTimelineDotInner} />
                 </View>
                 <View style={styles.timelineLine} />
               </View>
@@ -213,7 +235,7 @@ export default function LoadSuccessScreen() {
 
                 <Text style={styles.timelineDescription}>
                   {isExpedited
-                    ? 'Qualified drivers will be notified based on vehicle, location, and availability.'
+                    ? 'Qualified drivers are being notified based on vehicle, location, and availability.'
                     : 'Qualified drivers can accept your budget or submit a counteroffer.'}
                 </Text>
               </View>
@@ -241,7 +263,7 @@ export default function LoadSuccessScreen() {
 
           <View style={styles.notificationCard}>
             <View style={styles.notificationIconContainer}>
-              <Text style={styles.notificationIcon}>🔔</Text>
+              <Text style={styles.notificationIcon}>!</Text>
             </View>
 
             <View style={styles.notificationTextContainer}>
@@ -344,6 +366,14 @@ const styles = StyleSheet.create({
     marginTop: 10,
     textAlign: 'center',
   },
+  referenceNumber: {
+    color: '#1D4ED8',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    marginTop: 8,
+    textAlign: 'center',
+  },
   subtitle: {
     color: '#6B7280',
     fontSize: 17,
@@ -386,7 +416,9 @@ const styles = StyleSheet.create({
     width: 50,
   },
   serviceIcon: {
-    fontSize: 23,
+    color: '#1D4ED8',
+    fontSize: 22,
+    fontWeight: '900',
   },
   serviceTextContainer: {
     flex: 1,
@@ -434,6 +466,10 @@ const styles = StyleSheet.create({
     marginTop: 18,
     paddingTop: 17,
   },
+  priceTextContainer: {
+    flex: 1,
+    paddingRight: 12,
+  },
   priceLabel: {
     color: '#111827',
     fontSize: 13,
@@ -472,17 +508,36 @@ const styles = StyleSheet.create({
     width: 28,
   },
   activeTimelineDot: {
+    alignItems: 'center',
     backgroundColor: '#16A34A',
-    borderColor: '#BBF7D0',
     borderRadius: 999,
-    borderWidth: 5,
     height: 24,
+    justifyContent: 'center',
     width: 24,
+  },
+  completedCheck: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  currentTimelineDot: {
+    alignItems: 'center',
+    backgroundColor: '#DBEAFE',
+    borderRadius: 999,
+    height: 24,
+    justifyContent: 'center',
+    width: 24,
+  },
+  currentTimelineDotInner: {
+    backgroundColor: '#1D4ED8',
+    borderRadius: 999,
+    height: 10,
+    width: 10,
   },
   pendingTimelineDot: {
     alignItems: 'center',
-    backgroundColor: '#EEF3FF',
-    borderColor: '#BFDBFE',
+    backgroundColor: '#F1F5F9',
+    borderColor: '#CBD5E1',
     borderRadius: 999,
     borderWidth: 1,
     height: 24,
@@ -490,7 +545,7 @@ const styles = StyleSheet.create({
     width: 24,
   },
   timelineNumber: {
-    color: '#1D4ED8',
+    color: '#64748B',
     fontSize: 11,
     fontWeight: '900',
   },
@@ -536,7 +591,9 @@ const styles = StyleSheet.create({
     width: 42,
   },
   notificationIcon: {
-    fontSize: 19,
+    color: '#92400E',
+    fontSize: 18,
+    fontWeight: '900',
   },
   notificationTextContainer: {
     flex: 1,
