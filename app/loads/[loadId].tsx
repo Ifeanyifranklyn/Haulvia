@@ -1,36 +1,31 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Stack, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
-} from 'react-native';
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
-type ServiceType = 'expedited' | 'flex';
+type ServiceType = "expedited" | "flex";
 
 type TimelineEvent = {
   id: string;
   title: string;
   description: string;
   time?: string;
-  state: 'completed' | 'current' | 'pending';
+  state: "completed" | "current" | "pending";
 };
 
-type OfferStatus =
-  | 'ACTIVE'
-  | 'COUNTERED'
-  | 'ACCEPTED'
-  | 'DECLINED'
-  | 'EXPIRED';
+type OfferStatus = "ACTIVE" | "COUNTERED" | "ACCEPTED" | "DECLINED" | "EXPIRED";
 
 type DriverOffer = {
   id: string;
@@ -53,12 +48,12 @@ function firstParam(value: string | string[] | undefined) {
 
 function formatCurrency(value: number | null) {
   if (value === null) {
-    return 'Not available';
+    return "Not available";
   }
 
-  return new Intl.NumberFormat('en-CA', {
-    style: 'currency',
-    currency: 'CAD',
+  return new Intl.NumberFormat("en-CA", {
+    style: "currency",
+    currency: "CAD",
     minimumFractionDigits: 2,
   }).format(value);
 }
@@ -68,7 +63,7 @@ function formatCountdown(totalSeconds: number) {
   const minutes = Math.floor(safeSeconds / 60);
   const seconds = safeSeconds % 60;
 
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
 export default function CustomerLoadDetailsScreen() {
@@ -86,12 +81,12 @@ export default function CustomerLoadDetailsScreen() {
     deliveryDate?: string;
   }>();
 
-  const loadNumber = firstParam(params.loadId) ?? 'HV-20260722-0001';
+  const loadNumber = firstParam(params.loadId) ?? "HV-20260722-0001";
 
   const serviceType: ServiceType =
-    firstParam(params.serviceType) === 'expedited' ? 'expedited' : 'flex';
+    firstParam(params.serviceType) === "expedited" ? "expedited" : "flex";
 
-  const isExpedited = serviceType === 'expedited';
+  const isExpedited = serviceType === "expedited";
 
   const selectedPrice = useMemo(() => {
     const parsedPrice = Number(firstParam(params.price));
@@ -99,27 +94,27 @@ export default function CustomerLoadDetailsScreen() {
   }, [params.price]);
 
   const pickupLocation =
-    firstParam(params.pickupLocation) ?? 'Pickup location will appear here';
+    firstParam(params.pickupLocation) ?? "Pickup location will appear here";
   const deliveryLocation =
-    firstParam(params.deliveryLocation) ?? 'Delivery location will appear here';
-  const description = firstParam(params.description) ?? 'Posted load';
-  const category = firstParam(params.category) ?? 'General load';
-  const quantity = firstParam(params.quantity) ?? '1';
+    firstParam(params.deliveryLocation) ?? "Delivery location will appear here";
+  const description = firstParam(params.description) ?? "Posted load";
+  const category = firstParam(params.category) ?? "General load";
+  const quantity = firstParam(params.quantity) ?? "1";
   const vehicleRequirement =
-    firstParam(params.vehicleRequirement) ?? 'Not specified';
-  const pickupDate = firstParam(params.pickupDate) ?? 'To be confirmed';
-  const deliveryDate = firstParam(params.deliveryDate) ?? 'To be confirmed';
+    firstParam(params.vehicleRequirement) ?? "Not specified";
+  const pickupDate = firstParam(params.pickupDate) ?? "To be confirmed";
+  const deliveryDate = firstParam(params.deliveryDate) ?? "To be confirmed";
 
   const demoOffer = useMemo<DriverOffer>(
     () => ({
-      id: 'offer-demo-001',
-      driverName: 'John D.',
-      driverInitials: 'JD',
+      id: "offer-demo-001",
+      driverName: "John D.",
+      driverInitials: "JD",
       rating: 4.9,
       completedDeliveries: 87,
       vehicle:
-        vehicleRequirement === 'Not specified'
-          ? 'Pickup truck'
+        vehicleRequirement === "Not specified"
+          ? "Pickup truck"
           : vehicleRequirement,
       pickupEtaMinutes: 18,
       amount:
@@ -139,13 +134,15 @@ export default function CustomerLoadDetailsScreen() {
    * Haulvia backend. Expedited loads do not receive negotiable offers.
    */
   const [offerStatus, setOfferStatus] = useState<OfferStatus>(
-    isExpedited ? 'DECLINED' : 'ACTIVE',
+    isExpedited ? "DECLINED" : "ACTIVE",
   );
   const [posterCounterCount, setPosterCounterCount] = useState(0);
-  const [lastCounterAmount, setLastCounterAmount] = useState<number | null>(null);
+  const [lastCounterAmount, setLastCounterAmount] = useState<number | null>(
+    null,
+  );
   const [counterModalVisible, setCounterModalVisible] = useState(false);
-  const [counterAmountInput, setCounterAmountInput] = useState('');
-  const [counterError, setCounterError] = useState('');
+  const [counterAmountInput, setCounterAmountInput] = useState("");
+  const [counterError, setCounterError] = useState("");
 
   const offerExpiresAtRef = useRef(
     Date.now() + DEMO_OFFER_DURATION_SECONDS * 1000,
@@ -155,7 +152,7 @@ export default function CustomerLoadDetailsScreen() {
   );
 
   useEffect(() => {
-    if (offerStatus !== 'ACTIVE' && offerStatus !== 'COUNTERED') {
+    if (offerStatus !== "ACTIVE" && offerStatus !== "COUNTERED") {
       return;
     }
 
@@ -168,7 +165,7 @@ export default function CustomerLoadDetailsScreen() {
       setRemainingSeconds(secondsRemaining);
 
       if (secondsRemaining === 0) {
-        setOfferStatus('EXPIRED');
+        setOfferStatus("EXPIRED");
       }
     };
 
@@ -181,56 +178,55 @@ export default function CustomerLoadDetailsScreen() {
   const timeline = useMemo<TimelineEvent[]>(() => {
     const baseTimeline: TimelineEvent[] = [
       {
-        id: 'posted',
-        title: 'Load posted',
+        id: "posted",
+        title: "Load posted",
         description:
-          'The load was published successfully and is visible in your account.',
-        time: 'Just now',
-        state: 'completed',
+          "The load was published successfully and is visible in your account.",
+        time: "Just now",
+        state: "completed",
       },
       {
-        id: 'pricing',
-        title: 'Pricing confirmed',
+        id: "pricing",
+        title: "Pricing confirmed",
         description: isExpedited
-          ? 'The expedited fixed price was recorded for driver matching.'
-          : 'Your Flex budget was recorded for driver offers.',
-        time: 'Just now',
-        state: 'completed',
+          ? "The expedited fixed price was recorded for driver matching."
+          : "Your Flex budget was recorded for driver offers.",
+        time: "Just now",
+        state: "completed",
       },
     ];
 
-    if (offerStatus === 'ACCEPTED') {
+    if (offerStatus === "ACCEPTED") {
       return [
         ...baseTimeline,
         {
-          id: 'matching',
-          title: 'Driver offer accepted',
+          id: "matching",
+          title: "Driver offer accepted",
           description: `${demoOffer.driverName} was selected at ${formatCurrency(
             lastCounterAmount ?? demoOffer.amount,
           )}.`,
-          time: 'Just now',
-          state: 'completed',
+          time: "Just now",
+          state: "completed",
         },
         {
-          id: 'selected',
-          title: 'Driver selected',
-          description: 'The assigned driver and vehicle are confirmed.',
-          time: 'Just now',
-          state: 'completed',
+          id: "selected",
+          title: "Driver selected",
+          description: "The assigned driver and vehicle are confirmed.",
+          time: "Just now",
+          state: "completed",
         },
         {
-          id: 'pickup',
-          title: 'Pickup confirmed',
+          id: "pickup",
+          title: "Pickup confirmed",
+          description: "Pickup verification will be recorded after collection.",
+          state: "current",
+        },
+        {
+          id: "delivered",
+          title: "Delivered",
           description:
-            'Pickup verification will be recorded after collection.',
-          state: 'current',
-        },
-        {
-          id: 'delivered',
-          title: 'Delivered',
-          description:
-            'Delivery confirmation and proof of delivery will appear here.',
-          state: 'pending',
+            "Delivery confirmation and proof of delivery will appear here.",
+          state: "pending",
         },
       ];
     }
@@ -238,41 +234,41 @@ export default function CustomerLoadDetailsScreen() {
     return [
       ...baseTimeline,
       {
-        id: 'matching',
+        id: "matching",
         title: isExpedited
-          ? 'Priority driver matching'
-          : offerStatus === 'COUNTERED'
-            ? 'Counter-offer pending'
-            : offerStatus === 'EXPIRED'
-              ? 'Offer expired'
-              : 'Looking for drivers',
+          ? "Priority driver matching"
+          : offerStatus === "COUNTERED"
+            ? "Counter-offer pending"
+            : offerStatus === "EXPIRED"
+              ? "Offer expired"
+              : "Looking for drivers",
         description: isExpedited
-          ? 'Nearby qualified drivers are being prioritized for this load.'
-          : offerStatus === 'COUNTERED'
+          ? "Nearby qualified drivers are being prioritized for this load."
+          : offerStatus === "COUNTERED"
             ? `Waiting for ${demoOffer.driverName} to respond to your counter-offer.`
-            : offerStatus === 'EXPIRED'
-              ? 'The previous offer expired. Haulvia is continuing to notify qualified drivers.'
-              : 'Qualified drivers are being notified and can submit offers.',
-        state: offerStatus === 'EXPIRED' ? 'completed' : 'current',
+            : offerStatus === "EXPIRED"
+              ? "The previous offer expired. Haulvia is continuing to notify qualified drivers."
+              : "Qualified drivers are being notified and can submit offers.",
+        state: offerStatus === "EXPIRED" ? "completed" : "current",
       },
       {
-        id: 'selected',
-        title: 'Driver selected',
-        description: 'The selected driver and vehicle will appear here.',
-        state: 'pending',
+        id: "selected",
+        title: "Driver selected",
+        description: "The selected driver and vehicle will appear here.",
+        state: "pending",
       },
       {
-        id: 'pickup',
-        title: 'Pickup confirmed',
-        description: 'Pickup verification will be recorded after collection.',
-        state: 'pending',
+        id: "pickup",
+        title: "Pickup confirmed",
+        description: "Pickup verification will be recorded after collection.",
+        state: "pending",
       },
       {
-        id: 'delivered',
-        title: 'Delivered',
+        id: "delivered",
+        title: "Delivered",
         description:
-          'Delivery confirmation and proof of delivery will appear here.',
-        state: 'pending',
+          "Delivery confirmation and proof of delivery will appear here.",
+        state: "pending",
       },
     ];
   }, [
@@ -284,28 +280,28 @@ export default function CustomerLoadDetailsScreen() {
   ]);
 
   const canCounter =
-    offerStatus === 'ACTIVE' && posterCounterCount < MAX_POSTER_COUNTERS;
+    offerStatus === "ACTIVE" && posterCounterCount < MAX_POSTER_COUNTERS;
 
   const handleEditLoad = () => {
     Alert.alert(
-      'Editing is coming next',
-      'This action will reopen the posting flow with the saved load details.',
+      "Editing is coming next",
+      "This action will reopen the posting flow with the saved load details.",
     );
   };
 
   const handleCancelLoad = () => {
     Alert.alert(
-      'Cancel this load?',
-      'The load will be removed from driver matching. No payment has been taken.',
+      "Cancel this load?",
+      "The load will be removed from driver matching. No payment has been taken.",
       [
-        { text: 'Keep Load', style: 'cancel' },
+        { text: "Keep Load", style: "cancel" },
         {
-          text: 'Cancel Load',
-          style: 'destructive',
+          text: "Cancel Load",
+          style: "destructive",
           onPress: () => {
             Alert.alert(
-              'Load cancellation',
-              'Backend cancellation will be connected later.',
+              "Load cancellation",
+              "Backend cancellation will be connected later.",
             );
           },
         },
@@ -315,7 +311,7 @@ export default function CustomerLoadDetailsScreen() {
 
   const handleContactSupport = () => {
     Alert.alert(
-      'Haulvia Support',
+      "Haulvia Support",
       `Support will receive the reference number ${loadNumber} automatically.`,
     );
   };
@@ -330,7 +326,7 @@ export default function CustomerLoadDetailsScreen() {
         `Pickup ETA: ${demoOffer.pickupEtaMinutes} minutes`,
         `Offer: ${formatCurrency(demoOffer.amount)}`,
         `Typical response: within ${demoOffer.typicalResponseMinutes} minutes`,
-      ].join('\n'),
+      ].join("\n"),
     );
   };
 
@@ -338,15 +334,15 @@ export default function CustomerLoadDetailsScreen() {
     const acceptedAmount = lastCounterAmount ?? demoOffer.amount;
 
     Alert.alert(
-      'Accept this offer?',
+      "Accept this offer?",
       `${demoOffer.driverName} will be assigned at ${formatCurrency(
         acceptedAmount,
       )}. Acceptance locks the agreed price.`,
       [
-        { text: 'Not Yet', style: 'cancel' },
+        { text: "Not Yet", style: "cancel" },
         {
-          text: 'Accept Offer',
-          onPress: () => setOfferStatus('ACCEPTED'),
+          text: "Accept Offer",
+          onPress: () => setOfferStatus("ACCEPTED"),
         },
       ],
     );
@@ -354,14 +350,14 @@ export default function CustomerLoadDetailsScreen() {
 
   const handleDeclineOffer = () => {
     Alert.alert(
-      'Decline this offer?',
-      'The offer will be closed and the driver will be notified.',
+      "Decline this offer?",
+      "The offer will be closed and the driver will be notified.",
       [
-        { text: 'Keep Offer', style: 'cancel' },
+        { text: "Keep Offer", style: "cancel" },
         {
-          text: 'Decline',
-          style: 'destructive',
-          onPress: () => setOfferStatus('DECLINED'),
+          text: "Decline",
+          style: "destructive",
+          onPress: () => setOfferStatus("DECLINED"),
         },
       ],
     );
@@ -378,20 +374,20 @@ export default function CustomerLoadDetailsScreen() {
         : Math.max(1, demoOffer.amount - 2);
 
     setCounterAmountInput(suggestedCounter.toFixed(2));
-    setCounterError('');
+    setCounterError("");
     setCounterModalVisible(true);
   };
 
   const handleCloseCounterModal = () => {
     setCounterModalVisible(false);
-    setCounterError('');
+    setCounterError("");
   };
 
   const handleSendCounter = () => {
     const parsedCounter = Number(counterAmountInput);
 
     if (!Number.isFinite(parsedCounter) || parsedCounter <= 0) {
-      setCounterError('Enter a valid counter-offer amount.');
+      setCounterError("Enter a valid counter-offer amount.");
       return;
     }
 
@@ -404,19 +400,19 @@ export default function CustomerLoadDetailsScreen() {
 
     if (posterCounterCount >= MAX_POSTER_COUNTERS) {
       setCounterError(
-        'You have used both counter-offers for this negotiation.',
+        "You have used both counter-offers for this negotiation.",
       );
       return;
     }
 
     setPosterCounterCount((currentCount) => currentCount + 1);
     setLastCounterAmount(parsedCounter);
-    setOfferStatus('COUNTERED');
+    setOfferStatus("COUNTERED");
     setCounterModalVisible(false);
-    setCounterError('');
+    setCounterError("");
 
     Alert.alert(
-      'Counter-offer sent',
+      "Counter-offer sent",
       `${formatCurrency(parsedCounter)} was sent to ${
         demoOffer.driverName
       }. The offer timer is still running.`,
@@ -430,27 +426,27 @@ export default function CustomerLoadDetailsScreen() {
       </View>
 
       <Text style={styles.emptyOfferTitle}>
-        {offerStatus === 'EXPIRED'
-          ? 'Offer expired'
-          : offerStatus === 'DECLINED'
-            ? 'No active offers'
-            : 'No offers yet'}
+        {offerStatus === "EXPIRED"
+          ? "Offer expired"
+          : offerStatus === "DECLINED"
+            ? "No active offers"
+            : "No offers yet"}
       </Text>
 
       <Text style={styles.emptyOfferDescription}>
         {isExpedited
-          ? 'Haulvia is prioritizing nearby qualified drivers for this load.'
-          : offerStatus === 'EXPIRED'
-            ? 'The previous offer expired. Qualified nearby drivers are still being notified.'
-            : offerStatus === 'DECLINED'
-              ? 'The declined offer is closed. We will alert you when another driver responds.'
+          ? "Haulvia is prioritizing nearby qualified drivers for this load."
+          : offerStatus === "EXPIRED"
+            ? "The previous offer expired. Qualified nearby drivers are still being notified."
+            : offerStatus === "DECLINED"
+              ? "The declined offer is closed. We will alert you when another driver responds."
               : "Qualified nearby drivers are being notified. We'll alert you when an offer arrives."}
       </Text>
     </View>
   );
 
   const renderActiveOffer = () => {
-    const isWaitingForDriver = offerStatus === 'COUNTERED';
+    const isWaitingForDriver = offerStatus === "COUNTERED";
 
     return (
       <View style={styles.offerContainer}>
@@ -485,7 +481,7 @@ export default function CustomerLoadDetailsScreen() {
                 </View>
 
                 <Text style={styles.driverRating}>
-                  ★ {demoOffer.rating.toFixed(1)} ·{' '}
+                  ★ {demoOffer.rating.toFixed(1)} ·{" "}
                   {demoOffer.completedDeliveries} deliveries
                 </Text>
               </View>
@@ -673,8 +669,8 @@ export default function CustomerLoadDetailsScreen() {
           accessibilityRole="button"
           onPress={() => {
             Alert.alert(
-              'Live tracking',
-              'Driver tracking will be connected after the driver workflow is built.',
+              "Live tracking",
+              "Driver tracking will be connected after the driver workflow is built.",
             );
           }}
           style={({ pressed }) => [
@@ -689,14 +685,14 @@ export default function CustomerLoadDetailsScreen() {
   };
 
   const activeOfferCount =
-    offerStatus === 'ACTIVE' || offerStatus === 'COUNTERED' ? 1 : 0;
+    offerStatus === "ACTIVE" || offerStatus === "COUNTERED" ? 1 : 0;
 
   return (
     <>
       <Stack.Screen
         options={{
-          title: 'Load details',
-          headerBackTitle: 'Back',
+          title: "Load details",
+          headerBackTitle: "Back",
         }}
       />
 
@@ -728,25 +724,24 @@ export default function CustomerLoadDetailsScreen() {
             <View
               style={[
                 styles.statusBadge,
-                offerStatus === 'ACCEPTED' && styles.statusBadgeConfirmed,
+                offerStatus === "ACCEPTED" && styles.statusBadgeConfirmed,
               ]}
             >
               <View
                 style={[
                   styles.statusDot,
-                  offerStatus === 'ACCEPTED' && styles.statusDotConfirmed,
+                  offerStatus === "ACCEPTED" && styles.statusDotConfirmed,
                 ]}
               />
               <Text
                 style={[
                   styles.statusBadgeText,
-                  offerStatus === 'ACCEPTED' &&
-                    styles.statusBadgeTextConfirmed,
+                  offerStatus === "ACCEPTED" && styles.statusBadgeTextConfirmed,
                 ]}
               >
-                {offerStatus === 'ACCEPTED'
-                  ? 'DRIVER ASSIGNED'
-                  : 'LOOKING FOR DRIVERS'}
+                {offerStatus === "ACCEPTED"
+                  ? "DRIVER ASSIGNED"
+                  : "LOOKING FOR DRIVERS"}
               </Text>
             </View>
           </View>
@@ -809,7 +804,7 @@ export default function CustomerLoadDetailsScreen() {
 
               <View style={styles.tag}>
                 <Text style={styles.tagText}>
-                  {quantity} {quantity === '1' ? 'item' : 'items'}
+                  {quantity} {quantity === "1" ? "item" : "items"}
                 </Text>
               </View>
 
@@ -824,13 +819,13 @@ export default function CustomerLoadDetailsScreen() {
               <View>
                 <Text style={styles.detailLabel}>SERVICE</Text>
                 <Text style={styles.detailValue}>
-                  {isExpedited ? 'Expedited' : 'Flex'}
+                  {isExpedited ? "Expedited" : "Flex"}
                 </Text>
               </View>
 
               <View style={styles.priceContainer}>
                 <Text style={styles.detailLabel}>
-                  {isExpedited ? 'FIXED PRICE' : 'POSTED BUDGET'}
+                  {isExpedited ? "FIXED PRICE" : "POSTED BUDGET"}
                 </Text>
                 <Text style={styles.priceValue}>
                   {formatCurrency(selectedPrice)}
@@ -840,8 +835,8 @@ export default function CustomerLoadDetailsScreen() {
 
             <Text style={styles.priceNote}>
               {isExpedited
-                ? 'Qualified drivers are being matched at the displayed price.'
-                : 'Drivers can accept your budget or submit an offer.'}
+                ? "Qualified drivers are being matched at the displayed price."
+                : "Drivers can accept your budget or submit an offer."}
             </Text>
           </View>
 
@@ -849,27 +844,27 @@ export default function CustomerLoadDetailsScreen() {
             <View style={styles.sectionHeaderRow}>
               <View>
                 <Text style={styles.sectionTitle}>
-                  {offerStatus === 'ACCEPTED'
-                    ? 'Assigned driver'
+                  {offerStatus === "ACCEPTED"
+                    ? "Assigned driver"
                     : isExpedited
-                      ? 'Driver matching'
-                      : 'Driver offers'}
+                      ? "Driver matching"
+                      : "Driver offers"}
                 </Text>
 
                 <Text style={styles.sectionSubtitle}>
-                  {offerStatus === 'ACCEPTED'
-                    ? 'Your driver has been confirmed'
+                  {offerStatus === "ACCEPTED"
+                    ? "Your driver has been confirmed"
                     : isExpedited
-                      ? 'Priority matching is active'
+                      ? "Priority matching is active"
                       : `${activeOfferCount} ${
                           activeOfferCount === 1
-                            ? 'active offer'
-                            : 'active offers'
+                            ? "active offer"
+                            : "active offers"
                         }`}
                 </Text>
               </View>
 
-              {offerStatus !== 'ACCEPTED' ? (
+              {offerStatus !== "ACCEPTED" ? (
                 <View style={styles.liveBadge}>
                   <View style={styles.liveDot} />
                   <Text style={styles.liveBadgeText}>LIVE</Text>
@@ -877,9 +872,9 @@ export default function CustomerLoadDetailsScreen() {
               ) : null}
             </View>
 
-            {offerStatus === 'ACCEPTED'
+            {offerStatus === "ACCEPTED"
               ? renderAssignedDriver()
-              : offerStatus === 'ACTIVE' || offerStatus === 'COUNTERED'
+              : offerStatus === "ACTIVE" || offerStatus === "COUNTERED"
                 ? renderActiveOffer()
                 : renderNoOffersState()}
           </View>
@@ -900,20 +895,24 @@ export default function CustomerLoadDetailsScreen() {
                       <View
                         style={[
                           styles.timelineDot,
-                          event.state === 'completed' &&
+                          event.state === "completed" &&
                             styles.timelineDotCompleted,
-                          event.state === 'current' && styles.timelineDotCurrent,
-                          event.state === 'pending' && styles.timelineDotPending,
+                          event.state === "current" &&
+                            styles.timelineDotCurrent,
+                          event.state === "pending" &&
+                            styles.timelineDotPending,
                         ]}
                       >
-                        {event.state === 'completed' ? (
+                        {event.state === "completed" ? (
                           <Text style={styles.timelineCheck}>✓</Text>
-                        ) : event.state === 'current' ? (
+                        ) : event.state === "current" ? (
                           <View style={styles.timelineCurrentInner} />
                         ) : null}
                       </View>
 
-                      {!isLast ? <View style={styles.timelineConnector} /> : null}
+                      {!isLast ? (
+                        <View style={styles.timelineConnector} />
+                      ) : null}
                     </View>
 
                     <View
@@ -926,7 +925,7 @@ export default function CustomerLoadDetailsScreen() {
                         <Text
                           style={[
                             styles.timelineTitle,
-                            event.state === 'pending' &&
+                            event.state === "pending" &&
                               styles.timelineTitlePending,
                           ]}
                         >
@@ -989,7 +988,7 @@ export default function CustomerLoadDetailsScreen() {
         visible={counterModalVisible}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={styles.modalKeyboardView}
         >
           <Pressable
@@ -1002,9 +1001,7 @@ export default function CustomerLoadDetailsScreen() {
 
             <View style={styles.counterSheetHeader}>
               <View style={styles.counterSheetTitleContainer}>
-                <Text style={styles.counterSheetTitle}>
-                  Send counter-offer
-                </Text>
+                <Text style={styles.counterSheetTitle}>Send counter-offer</Text>
                 <Text style={styles.counterSheetSubtitle}>
                   You can counter this driver a maximum of two times.
                 </Text>
@@ -1036,9 +1033,7 @@ export default function CustomerLoadDetailsScreen() {
               <View style={styles.negotiationSummaryDivider} />
 
               <View style={styles.negotiationSummaryItem}>
-                <Text style={styles.negotiationSummaryLabel}>
-                  DRIVER OFFER
-                </Text>
+                <Text style={styles.negotiationSummaryLabel}>DRIVER OFFER</Text>
                 <Text style={styles.negotiationSummaryValue}>
                   {formatCurrency(demoOffer.amount)}
                 </Text>
@@ -1059,8 +1054,8 @@ export default function CustomerLoadDetailsScreen() {
                 autoFocus
                 keyboardType="decimal-pad"
                 onChangeText={(value) => {
-                  setCounterAmountInput(value.replace(/[^0-9.]/g, ''));
-                  setCounterError('');
+                  setCounterAmountInput(value.replace(/[^0-9.]/g, ""));
+                  setCounterError("");
                 }}
                 placeholder="0.00"
                 placeholderTextColor="#94A3B8"
@@ -1078,8 +1073,8 @@ export default function CustomerLoadDetailsScreen() {
             <View style={styles.counterRuleBox}>
               <Text style={styles.counterRuleTitle}>Negotiation rules</Text>
               <Text style={styles.counterRuleText}>
-                This will use counter-offer{' '}
-                {Math.min(posterCounterCount + 1, MAX_POSTER_COUNTERS)} of{' '}
+                This will use counter-offer{" "}
+                {Math.min(posterCounterCount + 1, MAX_POSTER_COUNTERS)} of{" "}
                 {MAX_POSTER_COUNTERS}. The current offer timer continues after
                 your counter is sent.
               </Text>
@@ -1106,483 +1101,568 @@ export default function CustomerLoadDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: '#F7F9FC', flex: 1 },
+  container: { backgroundColor: "#F7F9FC", flex: 1 },
   content: { paddingBottom: 44, paddingHorizontal: 20, paddingTop: 24 },
-  headingRow: { flexDirection: 'row' },
+  headingRow: { flexDirection: "row" },
   headingTextContainer: { flex: 1 },
   referenceLabel: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: 1,
   },
   referenceNumber: {
-    color: '#111827',
+    color: "#111827",
     fontSize: 28,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: 0.2,
     marginTop: 6,
   },
-  statusBadgeRow: { alignItems: 'flex-start', marginTop: 8 },
+  statusBadgeRow: { alignItems: "flex-start", marginTop: 8 },
   statusBadge: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: '#EFF6FF',
-    borderColor: '#BFDBFE',
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "#EFF6FF",
+    borderColor: "#BFDBFE",
     borderRadius: 999,
     borderWidth: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
-  statusBadgeConfirmed: { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' },
+  statusBadgeConfirmed: { backgroundColor: "#F0FDF4", borderColor: "#BBF7D0" },
   statusDot: {
-    backgroundColor: '#1D4ED8',
+    backgroundColor: "#1D4ED8",
     borderRadius: 999,
     height: 7,
     marginRight: 6,
     width: 7,
   },
-  statusDotConfirmed: { backgroundColor: '#16A34A' },
+  statusDotConfirmed: { backgroundColor: "#16A34A" },
   statusBadgeText: {
-    color: '#1D4ED8',
+    color: "#1D4ED8",
     fontSize: 9,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: 0.45,
   },
-  statusBadgeTextConfirmed: { color: '#15803D' },
-  postedTime: { color: '#6B7280', fontSize: 13, marginTop: 7 },
+  statusBadgeTextConfirmed: { color: "#15803D" },
+  postedTime: { color: "#6B7280", fontSize: 13, marginTop: 7 },
   routeCard: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E7EF',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E2E7EF",
     borderRadius: 22,
     borderWidth: 1,
     marginTop: 22,
     padding: 18,
   },
   routeHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 20,
   },
   routeStatus: {
-    color: '#16A34A',
+    color: "#16A34A",
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: 0.8,
   },
-  sectionTitle: { color: '#111827', fontSize: 19, fontWeight: '900' },
+  sectionTitle: { color: "#111827", fontSize: 19, fontWeight: "900" },
   sectionSubtitle: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 12,
     lineHeight: 18,
     marginTop: 4,
   },
-  routeItem: { flexDirection: 'row' },
-  routeVisual: { alignItems: 'center', marginRight: 14, width: 18 },
+  routeItem: { flexDirection: "row" },
+  routeVisual: { alignItems: "center", marginRight: 14, width: 18 },
   pickupDot: {
-    backgroundColor: '#1D4ED8',
+    backgroundColor: "#1D4ED8",
     borderRadius: 999,
     height: 12,
     width: 12,
   },
   routeLine: {
-    backgroundColor: '#CBD5E1',
+    backgroundColor: "#CBD5E1",
     flex: 1,
     marginVertical: 5,
     minHeight: 48,
     width: 2,
   },
   deliveryDot: {
-    backgroundColor: '#16A34A',
+    backgroundColor: "#16A34A",
     borderRadius: 3,
     height: 12,
     width: 12,
   },
   routeTextContainer: { flex: 1, paddingBottom: 20 },
   routeLabel: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: 0.8,
   },
   routeValue: {
-    color: '#111827',
+    color: "#111827",
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: "800",
     lineHeight: 21,
     marginTop: 4,
   },
-  routeDate: { color: '#6B7280', fontSize: 12, marginTop: 4 },
+  routeDate: { color: "#6B7280", fontSize: 12, marginTop: 4 },
   summaryCard: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E7EF',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E2E7EF",
     borderRadius: 22,
     borderWidth: 1,
     marginTop: 16,
     padding: 18,
   },
   sectionHeaderRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   textButton: { paddingHorizontal: 6, paddingVertical: 6 },
-  textButtonLabel: { color: '#1D4ED8', fontSize: 14, fontWeight: '800' },
+  textButtonLabel: { color: "#1D4ED8", fontSize: 14, fontWeight: "800" },
   pressed: { opacity: 0.68 },
   loadDescription: {
-    color: '#111827',
+    color: "#111827",
     fontSize: 17,
-    fontWeight: '800',
+    fontWeight: "800",
     lineHeight: 24,
     marginTop: 18,
   },
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 13 },
+  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 13 },
   tag: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: "#F1F5F9",
     borderRadius: 999,
     paddingHorizontal: 11,
     paddingVertical: 7,
   },
-  tagText: { color: '#475569', fontSize: 11, fontWeight: '800' },
-  divider: { backgroundColor: '#E5E7EB', height: 1, marginVertical: 18 },
+  tagText: { color: "#475569", fontSize: 11, fontWeight: "800" },
+  divider: { backgroundColor: "#E5E7EB", height: 1, marginVertical: 18 },
   serviceRow: {
-    alignItems: 'flex-end',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: "flex-end",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   detailLabel: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: 0.7,
   },
-  detailValue: { color: '#111827', fontSize: 17, fontWeight: '900', marginTop: 5 },
-  priceContainer: { alignItems: 'flex-end', flex: 1, paddingLeft: 16 },
-  priceValue: { color: '#1D4ED8', fontSize: 22, fontWeight: '900', marginTop: 5 },
-  priceNote: { color: '#6B7280', fontSize: 12, lineHeight: 18, marginTop: 13 },
+  detailValue: {
+    color: "#111827",
+    fontSize: 17,
+    fontWeight: "900",
+    marginTop: 5,
+  },
+  priceContainer: { alignItems: "flex-end", flex: 1, paddingLeft: 16 },
+  priceValue: {
+    color: "#1D4ED8",
+    fontSize: 22,
+    fontWeight: "900",
+    marginTop: 5,
+  },
+  priceNote: { color: "#6B7280", fontSize: 12, lineHeight: 18, marginTop: 13 },
   offersCard: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E7EF',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E2E7EF",
     borderRadius: 22,
     borderWidth: 1,
     marginTop: 16,
     padding: 18,
   },
   liveBadge: {
-    alignItems: 'center',
-    backgroundColor: '#F0FDF4',
+    alignItems: "center",
+    backgroundColor: "#F0FDF4",
     borderRadius: 999,
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 9,
     paddingVertical: 7,
   },
   liveDot: {
-    backgroundColor: '#16A34A',
+    backgroundColor: "#16A34A",
     borderRadius: 999,
     height: 7,
     marginRight: 6,
     width: 7,
   },
   liveBadgeText: {
-    color: '#15803D',
+    color: "#15803D",
     fontSize: 9,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: 0.7,
   },
   emptyOfferState: {
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
     borderRadius: 18,
     marginTop: 18,
     paddingHorizontal: 22,
     paddingVertical: 25,
   },
   searchIcon: {
-    alignItems: 'center',
-    backgroundColor: '#E8EEFF',
+    alignItems: "center",
+    backgroundColor: "#E8EEFF",
     borderRadius: 999,
     height: 48,
-    justifyContent: 'center',
+    justifyContent: "center",
     width: 48,
   },
-  searchIconText: { color: '#1D4ED8', fontSize: 25, fontWeight: '900' },
-  emptyOfferTitle: { color: '#111827', fontSize: 16, fontWeight: '900', marginTop: 13 },
+  searchIconText: { color: "#1D4ED8", fontSize: 25, fontWeight: "900" },
+  emptyOfferTitle: {
+    color: "#111827",
+    fontSize: 16,
+    fontWeight: "900",
+    marginTop: 13,
+  },
   emptyOfferDescription: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 13,
     lineHeight: 20,
     marginTop: 7,
-    textAlign: 'center',
+    textAlign: "center",
   },
   offerContainer: { marginTop: 18 },
   offerTimerRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   timerBadge: {
-    alignItems: 'center',
-    backgroundColor: '#FFF7ED',
-    borderColor: '#FED7AA',
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
     borderRadius: 12,
     borderWidth: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
   timerBadgeLabel: {
-    color: '#9A3412',
+    color: "#9A3412",
     fontSize: 8,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: 0.55,
   },
-  timerBadgeValue: { color: '#C2410C', fontSize: 12, fontWeight: '900', marginLeft: 7 },
+  timerBadgeValue: {
+    color: "#C2410C",
+    fontSize: 12,
+    fontWeight: "900",
+    marginLeft: 7,
+  },
   counterUsageText: {
-    color: '#64748B',
+    color: "#64748B",
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: "700",
     marginLeft: 10,
-    textAlign: 'right',
+    textAlign: "right",
   },
   driverOfferCard: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#E2E8F0',
+    backgroundColor: "#F8FAFC",
+    borderColor: "#E2E8F0",
     borderRadius: 18,
     borderWidth: 1,
     marginTop: 12,
     padding: 15,
   },
   driverHeaderRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
-  driverIdentity: { alignItems: 'center', flex: 1, flexDirection: 'row' },
+  driverIdentity: { alignItems: "center", flex: 1, flexDirection: "row" },
   driverAvatar: {
-    alignItems: 'center',
-    backgroundColor: '#DBEAFE',
+    alignItems: "center",
+    backgroundColor: "#DBEAFE",
     borderRadius: 999,
     height: 46,
-    justifyContent: 'center',
+    justifyContent: "center",
     width: 46,
   },
-  driverAvatarText: { color: '#1D4ED8', fontSize: 14, fontWeight: '900' },
+  driverAvatarText: { color: "#1D4ED8", fontSize: 14, fontWeight: "900" },
   driverTextContainer: { flex: 1, marginLeft: 11 },
-  driverNameRow: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap' },
-  driverName: { color: '#111827', fontSize: 16, fontWeight: '900' },
+  driverNameRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  driverName: { color: "#111827", fontSize: 16, fontWeight: "900" },
   verifiedBadge: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: "#ECFDF5",
     borderRadius: 999,
     marginLeft: 7,
     paddingHorizontal: 7,
     paddingVertical: 4,
   },
   verifiedBadgeText: {
-    color: '#15803D',
+    color: "#15803D",
     fontSize: 7,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: 0.45,
   },
-  driverRating: { color: '#64748B', fontSize: 11, fontWeight: '700', marginTop: 4 },
-  offerDetailsButton: { marginLeft: 8, paddingHorizontal: 5, paddingVertical: 7 },
-  offerDetailsButtonText: { color: '#1D4ED8', fontSize: 12, fontWeight: '900' },
+  driverRating: {
+    color: "#64748B",
+    fontSize: 11,
+    fontWeight: "700",
+    marginTop: 4,
+  },
+  offerDetailsButton: {
+    marginLeft: 8,
+    paddingHorizontal: 5,
+    paddingVertical: 7,
+  },
+  offerDetailsButtonText: { color: "#1D4ED8", fontSize: 12, fontWeight: "900" },
   offerFactsRow: {
-    alignItems: 'stretch',
-    backgroundColor: '#FFFFFF',
+    alignItems: "stretch",
+    backgroundColor: "#FFFFFF",
     borderRadius: 14,
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 15,
     paddingHorizontal: 13,
     paddingVertical: 12,
   },
   offerFact: { flex: 1 },
-  offerFactDivider: { backgroundColor: '#E2E8F0', marginHorizontal: 14, width: 1 },
+  offerFactDivider: {
+    backgroundColor: "#E2E8F0",
+    marginHorizontal: 14,
+    width: 1,
+  },
   offerFactLabel: {
-    color: '#64748B',
+    color: "#64748B",
     fontSize: 8,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: 0.55,
   },
-  offerFactValue: { color: '#111827', fontSize: 13, fontWeight: '900', marginTop: 5 },
+  offerFactValue: {
+    color: "#111827",
+    fontSize: 13,
+    fontWeight: "900",
+    marginTop: 5,
+  },
   responseTimeRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 14,
   },
-  responseTimeLabel: { color: '#64748B', fontSize: 11 },
+  responseTimeLabel: { color: "#64748B", fontSize: 11 },
   responseTimeValue: {
-    color: '#334155',
+    color: "#334155",
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: "800",
     marginLeft: 12,
-    textAlign: 'right',
+    textAlign: "right",
   },
   offerAmountRow: {
-    alignItems: 'flex-end',
-    borderTopColor: '#E2E8F0',
+    alignItems: "flex-end",
+    borderTopColor: "#E2E8F0",
     borderTopWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 14,
     paddingTop: 14,
   },
   offerAmountLabel: {
-    color: '#64748B',
+    color: "#64748B",
     fontSize: 9,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: 0.65,
   },
-  offerAmountValue: { color: '#111827', fontSize: 24, fontWeight: '900', marginTop: 5 },
-  counterAmountContainer: { alignItems: 'flex-end', flex: 1, paddingLeft: 14 },
-  counterAmountValue: { color: '#1D4ED8', fontSize: 19, fontWeight: '900', marginTop: 5 },
+  offerAmountValue: {
+    color: "#111827",
+    fontSize: 24,
+    fontWeight: "900",
+    marginTop: 5,
+  },
+  counterAmountContainer: { alignItems: "flex-end", flex: 1, paddingLeft: 14 },
+  counterAmountValue: {
+    color: "#1D4ED8",
+    fontSize: 19,
+    fontWeight: "900",
+    marginTop: 5,
+  },
   acceptOfferButton: {
-    alignItems: 'center',
-    backgroundColor: '#1D4ED8',
+    alignItems: "center",
+    backgroundColor: "#1D4ED8",
     borderRadius: 14,
-    justifyContent: 'center',
+    justifyContent: "center",
     marginTop: 16,
     minHeight: 50,
     paddingHorizontal: 16,
   },
   acceptOfferButtonPressed: { opacity: 0.84 },
-  acceptOfferButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '900' },
-  secondaryActionRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  acceptOfferButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "900" },
+  secondaryActionRow: { flexDirection: "row", gap: 10, marginTop: 10 },
   counterOfferButton: {
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderColor: '#93C5FD',
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#93C5FD",
     borderRadius: 14,
     borderWidth: 1,
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     minHeight: 48,
     paddingHorizontal: 10,
   },
-  counterOfferButtonDisabled: { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1' },
-  counterOfferButtonText: { color: '#1D4ED8', fontSize: 13, fontWeight: '900' },
-  counterOfferButtonTextDisabled: { color: '#94A3B8' },
+  counterOfferButtonDisabled: {
+    backgroundColor: "#F1F5F9",
+    borderColor: "#CBD5E1",
+  },
+  counterOfferButtonText: { color: "#1D4ED8", fontSize: 13, fontWeight: "900" },
+  counterOfferButtonTextDisabled: { color: "#94A3B8" },
   declineOfferButton: {
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FCA5A5',
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#FCA5A5",
     borderRadius: 14,
     borderWidth: 1,
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     minHeight: 48,
     paddingHorizontal: 10,
   },
-  declineOfferButtonText: { color: '#DC2626', fontSize: 13, fontWeight: '900' },
+  declineOfferButtonText: { color: "#DC2626", fontSize: 13, fontWeight: "900" },
   secondaryButtonPressed: { opacity: 0.72 },
   waitingState: {
-    alignItems: 'flex-start',
-    backgroundColor: '#EFF6FF',
-    borderColor: '#BFDBFE',
+    alignItems: "flex-start",
+    backgroundColor: "#EFF6FF",
+    borderColor: "#BFDBFE",
     borderRadius: 14,
     borderWidth: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 16,
     padding: 13,
   },
-  waitingDot: { backgroundColor: '#1D4ED8', borderRadius: 999, height: 8, marginTop: 5, width: 8 },
+  waitingDot: {
+    backgroundColor: "#1D4ED8",
+    borderRadius: 999,
+    height: 8,
+    marginTop: 5,
+    width: 8,
+  },
   waitingTextContainer: { flex: 1, marginLeft: 10 },
-  waitingTitle: { color: '#1E3A8A', fontSize: 12, fontWeight: '900' },
-  waitingDescription: { color: '#475569', fontSize: 11, lineHeight: 17, marginTop: 3 },
+  waitingTitle: { color: "#1E3A8A", fontSize: 12, fontWeight: "900" },
+  waitingDescription: {
+    color: "#475569",
+    fontSize: 11,
+    lineHeight: 17,
+    marginTop: 3,
+  },
   counterLimitMessage: {
-    color: '#9A3412',
+    color: "#9A3412",
     fontSize: 10,
     lineHeight: 16,
     marginTop: 11,
-    textAlign: 'center',
+    textAlign: "center",
   },
   assignedDriverCard: {
-    backgroundColor: '#F0FDF4',
-    borderColor: '#BBF7D0',
+    backgroundColor: "#F0FDF4",
+    borderColor: "#BBF7D0",
     borderRadius: 18,
     borderWidth: 1,
     marginTop: 18,
     padding: 15,
   },
   assignedHeaderRow: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: "flex-start",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   assignedAvatar: {
-    alignItems: 'center',
-    backgroundColor: '#DCFCE7',
+    alignItems: "center",
+    backgroundColor: "#DCFCE7",
     borderRadius: 999,
     height: 48,
-    justifyContent: 'center',
+    justifyContent: "center",
     width: 48,
   },
-  assignedAvatarText: { color: '#15803D', fontSize: 14, fontWeight: '900' },
+  assignedAvatarText: { color: "#15803D", fontSize: 14, fontWeight: "900" },
   assignedLabel: {
-    color: '#15803D',
+    color: "#15803D",
     fontSize: 8,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: 0.65,
   },
-  assignedDriverName: { color: '#111827', fontSize: 17, fontWeight: '900', marginTop: 3 },
+  assignedDriverName: {
+    color: "#111827",
+    fontSize: 17,
+    fontWeight: "900",
+    marginTop: 3,
+  },
   confirmedBadge: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: "#DCFCE7",
     borderRadius: 999,
     marginLeft: 8,
     paddingHorizontal: 8,
     paddingVertical: 6,
   },
   confirmedBadgeText: {
-    color: '#15803D',
+    color: "#15803D",
     fontSize: 8,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: 0.5,
   },
   assignedFactsRow: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 14,
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 16,
     padding: 13,
   },
   assignedFact: { flex: 1 },
-  assignedFactValue: { color: '#111827', fontSize: 15, fontWeight: '900', marginTop: 5 },
+  assignedFactValue: {
+    color: "#111827",
+    fontSize: 15,
+    fontWeight: "900",
+    marginTop: 5,
+  },
   trackDriverButton: {
-    alignItems: 'center',
-    backgroundColor: '#15803D',
+    alignItems: "center",
+    backgroundColor: "#15803D",
     borderRadius: 14,
-    justifyContent: 'center',
+    justifyContent: "center",
     marginTop: 14,
     minHeight: 50,
   },
-  trackDriverButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '900' },
+  trackDriverButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "900" },
   timelineCard: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E7EF',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E2E7EF",
     borderRadius: 22,
     borderWidth: 1,
     marginTop: 16,
     padding: 18,
   },
   timelineList: { marginTop: 22 },
-  timelineItem: { flexDirection: 'row' },
-  timelineVisual: { alignItems: 'center', marginRight: 13, width: 26 },
+  timelineItem: { flexDirection: "row" },
+  timelineVisual: { alignItems: "center", marginRight: 13, width: 26 },
   timelineDot: {
-    alignItems: 'center',
+    alignItems: "center",
     borderRadius: 999,
     height: 24,
-    justifyContent: 'center',
+    justifyContent: "center",
     width: 24,
   },
-  timelineDotCompleted: { backgroundColor: '#16A34A' },
-  timelineDotCurrent: { backgroundColor: '#DBEAFE' },
-  timelineDotPending: { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1', borderWidth: 1 },
-  timelineCheck: { color: '#FFFFFF', fontSize: 13, fontWeight: '900' },
-  timelineCurrentInner: { backgroundColor: '#1D4ED8', borderRadius: 999, height: 9, width: 9 },
+  timelineDotCompleted: { backgroundColor: "#16A34A" },
+  timelineDotCurrent: { backgroundColor: "#DBEAFE" },
+  timelineDotPending: {
+    backgroundColor: "#F1F5F9",
+    borderColor: "#CBD5E1",
+    borderWidth: 1,
+  },
+  timelineCheck: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
+  timelineCurrentInner: {
+    backgroundColor: "#1D4ED8",
+    borderRadius: 999,
+    height: 9,
+    width: 9,
+  },
   timelineConnector: {
-    backgroundColor: '#DCE3EE',
+    backgroundColor: "#DCE3EE",
     flex: 1,
     marginVertical: 5,
     minHeight: 34,
@@ -1591,66 +1671,71 @@ const styles = StyleSheet.create({
   timelineText: { flex: 1 },
   timelineTextWithSpacing: { paddingBottom: 22 },
   timelineTitleRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   timelineTitle: {
-    color: '#111827',
+    color: "#111827",
     flex: 1,
     fontSize: 14,
-    fontWeight: '900',
+    fontWeight: "900",
     paddingRight: 12,
   },
-  timelineTitlePending: { color: '#64748B' },
-  timelineTime: { color: '#94A3B8', fontSize: 10, fontWeight: '700' },
-  timelineDescription: { color: '#6B7280', fontSize: 12, lineHeight: 18, marginTop: 4 },
+  timelineTitlePending: { color: "#64748B" },
+  timelineTime: { color: "#94A3B8", fontSize: 10, fontWeight: "700" },
+  timelineDescription: {
+    color: "#6B7280",
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 4,
+  },
   actionsCard: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E7EF',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E2E7EF",
     borderRadius: 22,
     borderWidth: 1,
     marginTop: 16,
     padding: 18,
   },
   supportButton: {
-    alignItems: 'center',
-    backgroundColor: '#1D4ED8',
+    alignItems: "center",
+    backgroundColor: "#1D4ED8",
     borderRadius: 15,
-    justifyContent: 'center',
+    justifyContent: "center",
     marginTop: 18,
     minHeight: 54,
     paddingHorizontal: 18,
   },
   supportButtonPressed: { opacity: 0.84 },
-  supportButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '900' },
+  supportButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
   cancelButton: {
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FCA5A5',
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#FCA5A5",
     borderRadius: 15,
     borderWidth: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     marginTop: 11,
     minHeight: 52,
     paddingHorizontal: 18,
   },
-  cancelButtonPressed: { backgroundColor: '#FEF2F2' },
-  cancelButtonText: { color: '#DC2626', fontSize: 14, fontWeight: '900' },
+  cancelButtonPressed: { backgroundColor: "#FEF2F2" },
+  cancelButtonText: { color: "#DC2626", fontSize: 14, fontWeight: "900" },
   footerText: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 11,
     lineHeight: 17,
     marginTop: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
-  modalKeyboardView: { flex: 1, justifyContent: 'flex-end' },
+  modalKeyboardView: { flex: 1, justifyContent: "flex-end" },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15, 23, 42, 0.46)',
+    backgroundColor: "rgba(15, 23, 42, 0.46)",
   },
   counterSheet: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
     paddingBottom: 28,
@@ -1658,87 +1743,115 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   sheetHandle: {
-    alignSelf: 'center',
-    backgroundColor: '#CBD5E1',
+    alignSelf: "center",
+    backgroundColor: "#CBD5E1",
     borderRadius: 999,
     height: 4,
     width: 42,
   },
-  counterSheetHeader: { alignItems: 'flex-start', flexDirection: 'row', marginTop: 18 },
+  counterSheetHeader: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    marginTop: 18,
+  },
   counterSheetTitleContainer: { flex: 1, paddingRight: 12 },
-  counterSheetTitle: { color: '#111827', fontSize: 21, fontWeight: '900' },
-  counterSheetSubtitle: { color: '#64748B', fontSize: 12, lineHeight: 18, marginTop: 5 },
+  counterSheetTitle: { color: "#111827", fontSize: 21, fontWeight: "900" },
+  counterSheetSubtitle: {
+    color: "#64748B",
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 5,
+  },
   closeSheetButton: {
-    alignItems: 'center',
-    backgroundColor: '#F1F5F9',
+    alignItems: "center",
+    backgroundColor: "#F1F5F9",
     borderRadius: 999,
     height: 34,
-    justifyContent: 'center',
+    justifyContent: "center",
     width: 34,
   },
-  closeSheetButtonText: { color: '#475569', fontSize: 23, lineHeight: 24 },
+  closeSheetButtonText: { color: "#475569", fontSize: 23, lineHeight: 24 },
   negotiationSummary: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: "#F8FAFC",
     borderRadius: 16,
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 20,
     padding: 14,
   },
   negotiationSummaryItem: { flex: 1 },
-  negotiationSummaryDivider: { backgroundColor: '#E2E8F0', marginHorizontal: 14, width: 1 },
+  negotiationSummaryDivider: {
+    backgroundColor: "#E2E8F0",
+    marginHorizontal: 14,
+    width: 1,
+  },
   negotiationSummaryLabel: {
-    color: '#64748B',
+    color: "#64748B",
     fontSize: 8,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: 0.55,
   },
-  negotiationSummaryValue: { color: '#111827', fontSize: 16, fontWeight: '900', marginTop: 5 },
+  negotiationSummaryValue: {
+    color: "#111827",
+    fontSize: 16,
+    fontWeight: "900",
+    marginTop: 5,
+  },
   counterInputLabel: {
-    color: '#475569',
+    color: "#475569",
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: 0.65,
     marginTop: 20,
   },
   counterInputContainer: {
-    alignItems: 'center',
-    borderColor: '#CBD5E1',
+    alignItems: "center",
+    borderColor: "#CBD5E1",
     borderRadius: 15,
     borderWidth: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 8,
     minHeight: 58,
     paddingHorizontal: 14,
   },
-  counterInputContainerError: { borderColor: '#DC2626' },
-  currencyPrefix: { color: '#111827', fontSize: 22, fontWeight: '900' },
+  counterInputContainerError: { borderColor: "#DC2626" },
+  currencyPrefix: { color: "#111827", fontSize: 22, fontWeight: "900" },
   counterInput: {
-    color: '#111827',
+    color: "#111827",
     flex: 1,
     fontSize: 22,
-    fontWeight: '900',
+    fontWeight: "900",
     marginLeft: 6,
     paddingVertical: 10,
   },
-  currencyCode: { color: '#64748B', fontSize: 11, fontWeight: '900' },
-  counterErrorText: { color: '#DC2626', fontSize: 11, lineHeight: 17, marginTop: 7 },
+  currencyCode: { color: "#64748B", fontSize: 11, fontWeight: "900" },
+  counterErrorText: {
+    color: "#DC2626",
+    fontSize: 11,
+    lineHeight: 17,
+    marginTop: 7,
+  },
   counterRuleBox: {
-    backgroundColor: '#FFF7ED',
-    borderColor: '#FED7AA',
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
     borderRadius: 14,
     borderWidth: 1,
     marginTop: 16,
     padding: 13,
   },
-  counterRuleTitle: { color: '#9A3412', fontSize: 11, fontWeight: '900' },
-  counterRuleText: { color: '#7C2D12', fontSize: 11, lineHeight: 17, marginTop: 4 },
+  counterRuleTitle: { color: "#9A3412", fontSize: 11, fontWeight: "900" },
+  counterRuleText: {
+    color: "#7C2D12",
+    fontSize: 11,
+    lineHeight: 17,
+    marginTop: 4,
+  },
   sendCounterButton: {
-    alignItems: 'center',
-    backgroundColor: '#1D4ED8',
+    alignItems: "center",
+    backgroundColor: "#1D4ED8",
     borderRadius: 15,
-    justifyContent: 'center',
+    justifyContent: "center",
     marginTop: 18,
     minHeight: 54,
   },
-  sendCounterButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '900' },
+  sendCounterButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
 });
