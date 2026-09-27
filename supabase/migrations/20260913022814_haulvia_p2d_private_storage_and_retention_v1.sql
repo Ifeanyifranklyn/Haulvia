@@ -7610,7 +7610,9 @@ $$;
 -- ============================================================================
 -- P2D implementation complete.
 --
--- COMMIT intentionally remains absent until the rollback-only P2D acceptance
--- suite passes against the cumulative Foundation -> P2A -> P2B -> P2C -> P2D
--- chain.
+-- The production migration owns this transaction and commits below.
+-- Rollback-only acceptance execution must strip this final COMMIT from its
+-- temporary test copy before running acceptance assertions.
 -- ============================================================================
+
+COMMIT;

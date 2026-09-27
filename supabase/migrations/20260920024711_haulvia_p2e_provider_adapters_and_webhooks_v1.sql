@@ -8,11 +8,11 @@
 -- Contract SHA-256:
 -- 60C0408922C0474B3338C5E1274B6C74B570F57B18F01ACE62E7E718EBB7140A
 --
--- LOCAL DEVELOPMENT ONLY.
--- Hosted Supabase remains unchanged.
+-- DEPLOYMENT READY.
 --
--- This migration intentionally has no COMMIT while P2E acceptance is under
--- development.
+-- The production migration owns its transaction and commits at the end.
+-- Rollback-only regression runners must strip that final COMMIT from their
+-- temporary test copy before appending ROLLBACK.
 -- ============================================================================
 
 BEGIN;
@@ -3415,3 +3415,4 @@ alter table haulvia.provider_webhook_dispatches
 -- End P2E Block 4
 -- ============================================================================
 
+COMMIT;

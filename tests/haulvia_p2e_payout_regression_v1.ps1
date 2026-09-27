@@ -1791,7 +1791,7 @@ $tempSql =
 
 $fullSql =
     @(
-        $migrationText.TrimEnd(),
+        ([regex]::Replace($migrationText.TrimEnd(), '(?im)^\s*COMMIT\s*;\s*$', '')).TrimEnd(),
         $blockDSetup.Trim(),
         $behaviorSql.Trim(),
         "ROLLBACK;"
@@ -1895,8 +1895,8 @@ $commitCount = (
 
 Write-Host "Migration COMMIT count: $commitCount"
 
-if ($commitCount -ne 0) {
-    throw "P2E migration unexpectedly contains COMMIT."
+if ($commitCount -ne 1) {
+    throw "P2E migration must contain exactly one deployment COMMIT."
 }
 
 

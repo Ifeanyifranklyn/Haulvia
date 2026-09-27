@@ -44,8 +44,8 @@ $commitCount = (
     )
 ).Count
 
-if ($commitCount -ne 0) {
-    throw "P2E migration unexpectedly contains COMMIT."
+if ($commitCount -ne 1) {
+    throw "P2E migration must contain exactly one deployment COMMIT."
 }
 
 
@@ -1147,7 +1147,7 @@ $tempSql =
         "haulvia_p2e_block3b_edge_hardening.sql"
 
 $fullSql = @(
-    $migrationText.TrimEnd(),
+    ([regex]::Replace($migrationText.TrimEnd(), '(?im)^\s*COMMIT\s*;\s*$', '')).TrimEnd(),
     $behaviorSql.Trim(),
     "ROLLBACK;"
 ) -join "`r`n`r`n"
@@ -1248,8 +1248,8 @@ $finalCommitCount = (
 
 Write-Host "Migration COMMIT count: $finalCommitCount"
 
-if ($finalCommitCount -ne 0) {
-    throw "P2E migration unexpectedly contains COMMIT."
+if ($finalCommitCount -ne 1) {
+    throw "P2E migration must contain exactly one deployment COMMIT."
 }
 
 

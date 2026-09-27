@@ -84,16 +84,16 @@ $expectedAcceptanceHash =
     "741BC060847A9DA96A8F6ED9BE9D86A75DEC6B9DD5AB2CB8BDD65C07A4CCB493"
 
 $expectedPaymentSuccessHash =
-    "16AC8431050B50939A30E852A8262D09C7DB9F86359EB6619B729E8BB959A791"
+    "A2B7781A2DEB2A607DDF029958006459C2486C0C5BD497E8A90C8AA23198A355"
 
 $expectedA17Hash =
-    "6E3C6A9D2C55B5D21CF883CDCFC61AD3EBC84859C52A2D23DD0BD6EA5ABBB5B3"
+    "60749115A4349F4AC2E2332963CEDFC56338995617652D6219C362FB8F0912AE"
 
 $expectedPayoutHash =
-    "4E862F6B149C368543586ACC52BBB6450028272FA827F5DBDA60F20AEFB52711"
+    "A0667B7232AC7C811FA8ED2C802B0E7B533FCB95F55B9CC0027DCD9098B60883"
 
 $expectedEdgeHash =
-    "C86B9C182BBA7D45460B9A44F07EF8B6B3CD4365ADCF7AF6B9DECA85A93277E2"
+    "E08A3F207CFE16C3F4FCF041A0C87D824B64AAB79EA4B62853E450EFBD4766A9"
 
 $expectedLegacyCompatibilityHash =
     "B35E72DC26091E2ECF88B7E2A843E866E5FD7C1281D2EE2F064DC9C0EA07B0C6"
@@ -372,8 +372,8 @@ $migrationCommitCount =
     ).Count
 
 
-if ($migrationCommitCount -ne 0) {
-    throw "P2E migration unexpectedly contains COMMIT."
+if ($migrationCommitCount -ne 1) {
+    throw "P2E migration must contain exactly one deployment COMMIT."
 }
 
 
@@ -403,7 +403,7 @@ if (
 }
 
 
-Write-Host "PASS: transaction ownership remains with the final gate."
+Write-Host "PASS: production migration owns one COMMIT; final gate strips it from the rollback-only test copy."
 
 
 # ============================================================================
@@ -523,7 +523,7 @@ Write-Host "PASS: Block A and Block D regressions are rollback protected."
 
 
 # ============================================================================
-# Adapter regression ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â frozen 13/13 execution pattern
+# Adapter regression ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â frozen 13/13 execution pattern
 # ============================================================================
 
 Write-Host ""
@@ -830,7 +830,7 @@ $tempSql =
 
 
 $combined =
-    $migrationText.TrimEnd() +
+    ([regex]::Replace($migrationText.TrimEnd(), '(?im)^\s*COMMIT\s*;\s*$', '')).TrimEnd() +
     "`r`n`r`n" +
     $evidenceSql.Trim() +
     "`r`n`r`n" +

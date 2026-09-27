@@ -17,10 +17,10 @@
 -- This suite is rollback-only.
 --
 -- IMPORTANT:
--- The P2D migration intentionally has no COMMIT while this suite is under
--- construction. During development, run the P2D migration and this acceptance
--- file in the same psql session so all P2D objects remain visible and the final
--- acceptance ROLLBACK removes the entire P2D test transaction.
+-- The production P2D migration is deployment-ready and commits normally.
+-- Apply P2D first, then run this acceptance suite as a separate transaction.
+-- This suite owns its BEGIN/ROLLBACK so acceptance fixtures and verification
+-- activity are removed without rolling back the committed P2D migration.
 
 
 begin;
@@ -3975,11 +3975,11 @@ from p2d_test_results;
 
 
 -- ============================================================================
--- Roll back the complete P2D development transaction.
+-- Roll back the P2D acceptance transaction.
 --
--- The P2D migration intentionally remains without COMMIT at this stage.
--- This ROLLBACK removes the migration and all acceptance fixtures from the
--- disposable local database after proving the complete contract.
+-- P2D itself is already committed before this suite runs.
+-- This ROLLBACK removes only acceptance fixtures and verification activity,
+-- leaving the committed P2D database state intact.
 -- ============================================================================
 
 rollback;
