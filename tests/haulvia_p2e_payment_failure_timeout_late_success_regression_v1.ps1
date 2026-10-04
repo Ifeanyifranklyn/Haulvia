@@ -187,7 +187,7 @@ $blockASetup = $blockASetup.Replace(
 )
 
 
-function Replace-One {
+function Update-OneOccurrence {
     param(
         [string]$Text,
         [string]$Old,
@@ -245,7 +245,7 @@ $new = @"
   );
 "@
 
-$blockASetup = Replace-One `
+$blockASetup = Update-OneOccurrence `
     $blockASetup $old $new "Block A policy"
 
 
@@ -279,7 +279,7 @@ $new = @"
       'P2E A17 rollback fixture fixed pricing approval');
 "@
 
-$blockASetup = Replace-One `
+$blockASetup = Update-OneOccurrence `
     $blockASetup $old $new "Block A pricing"
 
 
@@ -293,7 +293,7 @@ $new = @"
     '$approverProfile'::uuid, clock_timestamp(), '$approverReauth'::uuid
 "@
 
-$blockASetup = Replace-One `
+$blockASetup = Update-OneOccurrence `
     $blockASetup $old $new "Block A rate card"
 
 

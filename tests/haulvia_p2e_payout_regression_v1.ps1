@@ -130,7 +130,7 @@ $blockDSetup =
     )
 
 
-function Replace-One {
+function Update-OneOccurrence {
     param(
         [Parameter(Mandatory)]
         [string]$Text,
@@ -306,7 +306,7 @@ $new = @'
 '@
 
 $blockDSetup =
-    Replace-One `
+    Update-OneOccurrence `
         -Text $blockDSetup `
         -Old $old `
         -New $new `
@@ -355,7 +355,7 @@ $new = @"
 "@
 
 $blockDSetup =
-    Replace-One `
+    Update-OneOccurrence `
         -Text $blockDSetup `
         -Old $old `
         -New $new `
@@ -392,7 +392,7 @@ $new = @"
 "@
 
 $blockDSetup =
-    Replace-One `
+    Update-OneOccurrence `
         -Text $blockDSetup `
         -Old $old `
         -New $new `
@@ -431,7 +431,7 @@ $new = @'
 '@
 
 $blockDSetup =
-    Replace-One `
+    Update-OneOccurrence `
         -Text $blockDSetup `
         -Old $old `
         -New $new `
