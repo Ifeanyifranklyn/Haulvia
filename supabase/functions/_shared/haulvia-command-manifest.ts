@@ -1,10 +1,11 @@
 // SERVER-ONLY.
 // Do not import this module into the Expo application.
 //
-// Haulvia P2E explicit backend command manifest.
+// Haulvia explicit backend command manifest.
 // Frozen baseline: 86 pre-P2E wrappers.
 // P2E additions: 5 wrappers.
-// Total approved backend command signatures: 91.
+// P2F additions: 1 observability wrapper.
+// Total approved backend command signatures: 92.
 //
 // No request-controlled SQL/function identifier may bypass this registry.
 
@@ -557,6 +558,13 @@ export const HAULVIA_COMMAND_MANIFEST = [
     resultType: "jsonb",
     phase: "P2E",
   },
+  {
+    commandName: "command_record_command_failure_observation",
+    rpcFunction: "command_record_command_failure_observation",
+    identityArguments: "p_request jsonb",
+    resultType: "jsonb",
+    phase: "P2F",
+  },
 ] as const;
 
 export type HaulviaCommandManifestEntry =
@@ -570,7 +578,8 @@ export type HaulviaRpcFunctionName =
 
 export const PRE_P2E_COMMAND_COUNT = 86 as const;
 export const P2E_COMMAND_COUNT = 5 as const;
-export const TOTAL_COMMAND_COUNT = 91 as const;
+export const P2F_COMMAND_COUNT = 1 as const;
+export const TOTAL_COMMAND_COUNT = 92 as const;
 
 const COMMAND_BY_NAME:
   ReadonlyMap<string, HaulviaCommandManifestEntry> =

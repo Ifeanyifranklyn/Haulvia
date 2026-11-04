@@ -1,7 +1,9 @@
 import {
   resolveHaulviaCommand,
+  type HaulviaCommandManifestEntry,
   type HaulviaCommandName,
 } from "./haulvia-command-manifest";
+
 
 export type JsonPrimitive =
   | string
@@ -9,14 +11,17 @@ export type JsonPrimitive =
   | boolean
   | null;
 
+
 export type JsonValue =
   | JsonPrimitive
   | JsonObject
   | JsonValue[];
 
+
 export interface JsonObject {
   [key: string]: JsonValue;
 }
+
 
 export interface HaulviaRpcError {
   code?: string | null;
@@ -25,10 +30,12 @@ export interface HaulviaRpcError {
   hint?: string | null;
 }
 
+
 export interface HaulviaRpcResult {
   data: unknown;
   error: HaulviaRpcError | null;
 }
+
 
 export interface HaulviaRpcClient {
   rpc(
@@ -39,17 +46,20 @@ export interface HaulviaRpcClient {
   ): PromiseLike<HaulviaRpcResult>;
 }
 
+
 export interface HaulviaCommandInvocation {
   commandName: string;
   correlationId: string;
   request: JsonObject;
 }
 
+
 export interface HaulviaNormalizedError {
   code: string;
   message: string;
   details?: JsonObject;
 }
+
 
 export type HaulviaCommandResultEnvelope =
   | {
@@ -65,6 +75,19 @@ export type HaulviaCommandResultEnvelope =
       error: HaulviaNormalizedError;
     };
 
+
+const FAILURE_OBSERVATION_COMMAND_NAME =
+  "command_record_command_failure_observation";
+
+
+const RETRYABLE_DATABASE_SQLSTATES =
+  new Set([
+    "40001",
+    "40P01",
+    "55P03",
+  ]);
+
+
 function isObject(
   value: unknown,
 ): value is Record<string, unknown> {
@@ -74,6 +97,7 @@ function isObject(
     !Array.isArray(value)
   );
 }
+
 
 function parseStructuredErrorDetail(
   details: string | null | undefined,
@@ -94,6 +118,7 @@ function parseStructuredErrorDetail(
   }
 }
 
+
 function optionalString(
   value: unknown,
 ): string | null {
@@ -104,6 +129,190 @@ function optionalString(
     ? value
     : null;
 }
+
+
+function optionalTrimmedString(
+  value: unknown,
+): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed =
+    value.trim();
+
+  return trimmed.length > 0
+    ? trimmed
+    : null;
+}
+
+
+function optionalUuid(
+  value: unknown,
+): string | null {
+  const candidate =
+    optionalTrimmedString(
+      value,
+    );
+
+  if (
+    candidate === null ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      candidate,
+    )
+  ) {
+    return null;
+  }
+
+  return candidate.toLowerCase();
+}
+
+
+function normalizeSqlstate(
+  value: unknown,
+): string | null {
+  const candidate =
+    optionalTrimmedString(
+      value,
+    );
+
+  if (candidate === null) {
+    return null;
+  }
+
+  const normalized =
+    candidate.toUpperCase();
+
+  return /^[0-9A-Z]{5}$/.test(
+    normalized,
+  )
+    ? normalized
+    : null;
+}
+
+
+function sanitizeStableErrorCode(
+  value: string,
+): string {
+  const normalized =
+    value
+      .trim()
+      .toUpperCase()
+      .replace(
+        /[^A-Z0-9_.:-]+/g,
+        "_",
+      )
+      .slice(
+        0,
+        200,
+      );
+
+  return (
+    normalized.length > 0 &&
+    /^[A-Z0-9_]/.test(
+      normalized,
+    )
+  )
+    ? normalized
+    : "HAULVIA_COMMAND_FAILED";
+}
+
+
+function canonicalJson(
+  value: JsonValue,
+): string {
+  if (value === null) {
+    return "null";
+  }
+
+  if (Array.isArray(value)) {
+    return (
+      "[" +
+      value
+        .map(
+          (entry) =>
+            canonicalJson(
+              entry,
+            ),
+        )
+        .join(",") +
+      "]"
+    );
+  }
+
+  if (typeof value === "object") {
+    const keys =
+      Object.keys(
+        value,
+      ).sort();
+
+    return (
+      "{" +
+      keys
+        .map(
+          (key) =>
+            JSON.stringify(key) +
+            ":" +
+            canonicalJson(
+              value[key],
+            ),
+        )
+        .join(",") +
+      "}"
+    );
+  }
+
+  if (typeof value === "string") {
+    return JSON.stringify(
+      value,
+    );
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(
+      value,
+    )
+      ? String(value)
+      : "null";
+  }
+
+  return value
+    ? "true"
+    : "false";
+}
+
+
+async function sha256Hex(
+  value: string,
+): Promise<string> {
+  const bytes =
+    new TextEncoder()
+      .encode(
+        value,
+      );
+
+  const digest =
+    await globalThis.crypto
+      .subtle
+      .digest(
+        "SHA-256",
+        bytes,
+      );
+
+  return Array.from(
+    new Uint8Array(
+      digest,
+    ),
+    (byte) =>
+      byte
+        .toString(16)
+        .padStart(
+          2,
+          "0",
+        ),
+  ).join("");
+}
+
 
 function normalizeRpcError(
   error: HaulviaRpcError,
@@ -153,6 +362,210 @@ function normalizeRpcError(
   };
 }
 
+
+function logObservationWriteFailure(
+  failedCommandName: string,
+  correlationId: string,
+  observerErrorCode: string,
+): void {
+  console.error(
+    "HAULVIA_COMMAND_FAILURE_OBSERVATION_WRITE_FAILED",
+    {
+      failedCommandName,
+      correlationId,
+      observerErrorCode:
+        sanitizeStableErrorCode(
+          observerErrorCode,
+        ),
+    },
+  );
+}
+
+
+async function tryRecordCommandFailureObservation(
+  client: HaulviaRpcClient,
+  failedManifestEntry: HaulviaCommandManifestEntry,
+  correlationId: string,
+  request: JsonObject,
+  normalizedError: HaulviaNormalizedError,
+  rpcError: HaulviaRpcError,
+): Promise<void> {
+
+  if (
+    failedManifestEntry.commandName ===
+      FAILURE_OBSERVATION_COMMAND_NAME
+  ) {
+    return;
+  }
+
+
+  const observerManifestEntry =
+    resolveHaulviaCommand(
+      FAILURE_OBSERVATION_COMMAND_NAME,
+    );
+
+  if (!observerManifestEntry) {
+    logObservationWriteFailure(
+      failedManifestEntry.commandName,
+      correlationId,
+      "OBSERVATION_COMMAND_NOT_MANIFESTED",
+    );
+
+    return;
+  }
+
+
+  try {
+    const requestSha256 =
+      await sha256Hex(
+        canonicalJson(
+          request,
+        ),
+      );
+
+    const rawIdempotencyKey =
+      optionalTrimmedString(
+        request.idempotencyKey,
+      );
+
+    const idempotencyKeySha256 =
+      rawIdempotencyKey === null
+        ? null
+        : await sha256Hex(
+            rawIdempotencyKey,
+          );
+
+    const sqlstate =
+      normalizeSqlstate(
+        rpcError.code,
+      );
+
+    const errorCode =
+      sanitizeStableErrorCode(
+        normalizedError.code,
+      );
+
+
+    const observationIdentity =
+      [
+        failedManifestEntry.commandName,
+        correlationId,
+        requestSha256,
+        errorCode,
+        sqlstate ?? "",
+      ].join("\n");
+
+
+    const observationKey =
+      "command-adapter:" +
+      await sha256Hex(
+        observationIdentity,
+      );
+
+
+    const observationRequest: JsonObject = {
+      actorProfileId:
+        null,
+
+      workerAuthority:
+        "OBSERVABILITY_WORKER",
+
+      observationKey,
+
+      sourceCode:
+        "COMMAND_ADAPTER",
+
+      failedCommandName:
+        failedManifestEntry.commandName,
+
+      correlationId:
+        correlationId.length <= 200
+          ? correlationId
+          : null,
+
+      requestSha256,
+
+      errorCode,
+
+      sqlstate,
+
+      retryable:
+        sqlstate !== null &&
+        RETRYABLE_DATABASE_SQLSTATES.has(
+          sqlstate,
+        ),
+    };
+
+
+    const failedActorProfileId =
+      optionalUuid(
+        request.actorProfileId,
+      );
+
+    const failedOrganizationId =
+      optionalUuid(
+        request.organizationId,
+      );
+
+    const failedShipmentId =
+      optionalUuid(
+        request.shipmentId,
+      );
+
+
+    if (failedActorProfileId !== null) {
+      observationRequest.failedActorProfileId =
+        failedActorProfileId;
+    }
+
+    if (failedOrganizationId !== null) {
+      observationRequest.failedOrganizationId =
+        failedOrganizationId;
+    }
+
+    if (failedShipmentId !== null) {
+      observationRequest.failedShipmentId =
+        failedShipmentId;
+    }
+
+    if (idempotencyKeySha256 !== null) {
+      observationRequest.idempotencyKeySha256 =
+        idempotencyKeySha256;
+    }
+
+
+    const observationResult =
+      await client.rpc(
+        observerManifestEntry.rpcFunction,
+        {
+          p_request:
+            observationRequest,
+        },
+      );
+
+
+    if (observationResult.error) {
+      const observerError =
+        normalizeRpcError(
+          observationResult.error,
+        );
+
+      logObservationWriteFailure(
+        failedManifestEntry.commandName,
+        correlationId,
+        observerError.code,
+      );
+    }
+  } catch {
+    logObservationWriteFailure(
+      failedManifestEntry.commandName,
+      correlationId,
+      "OBSERVATION_WRITE_TRANSPORT_ERROR",
+    );
+  }
+}
+
+
 export async function executeHaulviaCommand(
   client: HaulviaRpcClient,
   invocation: HaulviaCommandInvocation,
@@ -175,6 +588,7 @@ export async function executeHaulviaCommand(
     };
   }
 
+
   const manifestEntry =
     resolveHaulviaCommand(
       invocation.commandName,
@@ -195,41 +609,18 @@ export async function executeHaulviaCommand(
     };
   }
 
+
+  let rpcResult: HaulviaRpcResult;
+
   try {
-    // Critical security invariant:
-    // rpcFunction comes ONLY from the static manifest above.
-    // invocation.commandName is never passed directly to rpc().
-    const {
-      data,
-      error,
-    } = await client.rpc(
-      manifestEntry.rpcFunction,
-      {
-        p_request:
-          invocation.request,
-      },
-    );
-
-    if (error) {
-      return {
-        success: false,
-        commandName:
-          manifestEntry.commandName,
-        correlationId,
-        error:
-          normalizeRpcError(
-            error,
-          ),
-      };
-    }
-
-    return {
-      success: true,
-      commandName:
-        manifestEntry.commandName,
-      correlationId,
-      result: data,
-    };
+    rpcResult =
+      await client.rpc(
+        manifestEntry.rpcFunction,
+        {
+          p_request:
+            invocation.request,
+        },
+      );
   } catch {
     return {
       success: false,
@@ -244,4 +635,40 @@ export async function executeHaulviaCommand(
       },
     };
   }
+
+
+  if (rpcResult.error) {
+    const normalizedError =
+      normalizeRpcError(
+        rpcResult.error,
+      );
+
+    await tryRecordCommandFailureObservation(
+      client,
+      manifestEntry,
+      correlationId,
+      invocation.request,
+      normalizedError,
+      rpcResult.error,
+    );
+
+    return {
+      success: false,
+      commandName:
+        manifestEntry.commandName,
+      correlationId,
+      error:
+        normalizedError,
+    };
+  }
+
+
+  return {
+    success: true,
+    commandName:
+      manifestEntry.commandName,
+    correlationId,
+    result:
+      rpcResult.data,
+  };
 }

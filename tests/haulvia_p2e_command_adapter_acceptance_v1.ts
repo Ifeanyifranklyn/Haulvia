@@ -2,6 +2,7 @@ import {
   HAULVIA_COMMAND_MANIFEST,
   PRE_P2E_COMMAND_COUNT,
   P2E_COMMAND_COUNT,
+  P2F_COMMAND_COUNT,
   TOTAL_COMMAND_COUNT,
   resolveHaulviaCommand,
 } from "../supabase/functions/_shared/haulvia-command-manifest";
@@ -96,11 +97,12 @@ async function main(): Promise<void> {
   // ==========================================================================
 
   assertTest(
-    "01 manifest exposes frozen 86 + 5 = 91 command counts",
+    "01 manifest preserves 86 PRE_P2E + 5 P2E and adds exactly 1 P2F command",
     PRE_P2E_COMMAND_COUNT === 86 &&
       P2E_COMMAND_COUNT === 5 &&
-      TOTAL_COMMAND_COUNT === 91 &&
-      HAULVIA_COMMAND_MANIFEST.length === 91,
+      P2F_COMMAND_COUNT === 1 &&
+      TOTAL_COMMAND_COUNT === 92 &&
+      HAULVIA_COMMAND_MANIFEST.length === 92,
   );
 
 
@@ -114,8 +116,8 @@ async function main(): Promise<void> {
 
 
   assertTest(
-    "02 manifest contains 91 unique command names",
-    uniqueNames.size === 91,
+    "02 cumulative manifest contains 92 unique command names",
+    uniqueNames.size === 92,
   );
 
 
@@ -129,9 +131,14 @@ async function main(): Promise<void> {
       "command_dispatch_provider_webhook",
     );
 
+  const p2fCommand =
+    resolveHaulviaCommand(
+      "command_record_command_failure_observation",
+    );
+
 
   assertTest(
-    "03 manifest resolves both pre-P2E and P2E commands",
+    "03 manifest resolves PRE_P2E P2E and P2F command boundaries",
     baselineCommand !== null &&
       baselineCommand.phase ===
         "PRE_P2E" &&
@@ -141,7 +148,12 @@ async function main(): Promise<void> {
       p2eCommand.phase ===
         "P2E" &&
       p2eCommand.rpcFunction ===
-        "command_dispatch_provider_webhook",
+        "command_dispatch_provider_webhook" &&
+      p2fCommand !== null &&
+      p2fCommand.phase ===
+        "P2F" &&
+      p2fCommand.rpcFunction ===
+        "command_record_command_failure_observation",
   );
 
 
